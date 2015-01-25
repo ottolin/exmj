@@ -48,28 +48,14 @@ defmodule Tile do
     |> Enum.reduce(true, fn(t,acc) -> acc && (t.sub == h.sub) && (t.num == h.num) end)
   end
 
-  def valid_3([x, y, z]) do
-    sheung([x, y, z]) or pung([x, y, z])
-  end
-
-  def same_sub_3([x, y, z]) do
-    x.sub == y.sub &&
-    y.sub == z.sub
-  end
-
-  def consec_3([x, y, z]) do
-    mag = [x.num, y.num, z.num]
-          |> Enum.sort 
-    [min|_T] = mag
-    [0, 1, 2] == mag |> Enum.map(fn n -> n - min end)
-  end
-
   def pung([x, y, z]) do
     same([x, y, z])
   end
 
-  def sheung([x, y, z]) do
-    same_sub_3([x, y, z]) && consec_3([x, y, z])
+  def sheung([_x, _y, _z] = inlist) do
+    same_sub_3(inlist) && 
+    consec_3(inlist) && 
+    Enum.reduce(inlist, true, fn (t, acc) -> acc && t.cat in [:Dot, :Bamboo, :Character] end)
   end
 
   def find_3(tiles) do
@@ -92,6 +78,22 @@ defmodule Tile do
     # Assigning an id to it for easier to find permutation later on
     # Enum.zip(all_tiles, 1..144) |> Enum.map( fn tuple -> %{elem(tuple, 0) | id: elem(tuple, 1)} end )
     all_tiles
+  end
+
+  defp same_sub_3([x, y, z]) do
+    x.sub == y.sub &&
+    y.sub == z.sub
+  end
+
+  defp consec_3([x, y, z]) do
+    mag = [x.num, y.num, z.num]
+          |> Enum.sort 
+    [min|_T] = mag
+    [0, 1, 2] == mag |> Enum.map(fn n -> n - min end)
+  end
+
+  defp valid_3([x, y, z]) do
+    sheung([x, y, z]) or pung([x, y, z])
   end
 
   defp all_bamboos do
