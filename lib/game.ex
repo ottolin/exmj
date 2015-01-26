@@ -45,8 +45,8 @@ defmodule Game do
   def handle_call(:play, _from, gInfo) do
     nplayers = length(gInfo.players)
     cond do
-      nplayers != 4 -> {reply, :num_players_incorrect, gInfo}
-      true -> {reply, :ok, gInfo}
+      nplayers != 4 -> {:reply, :num_players_incorrect, gInfo}
+      true -> {:reply, :ok, gInfo}
     end
   end
 
