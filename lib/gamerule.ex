@@ -1,4 +1,4 @@
-defmodule GameSet do
+defmodule GameRule do
 
   def win(tiles, fixed_tiles \\ []) do
     wp = do_winpattern(tiles, fixed_tiles)
