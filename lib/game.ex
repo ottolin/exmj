@@ -5,7 +5,8 @@ defmodule GameInfo do
             jong: 0, # 0 - 3
             curPlayerId: 0, # 0 - 3
             coveredTiles: [],
-            openedTiles: []
+            openedTiles: [],
+            hands: :invalid # for holding different player tiles. { {[tiles], [fixed_tiles]} * 4 }
 
 end
 
@@ -29,10 +30,6 @@ defmodule Game do
     GenServer.call(game, :who_to_move)
   end
 
-  def play(game) do
-    GenServer.call(game, :play)
-  end
-
   ## Server callbacks
   def init(_args) do
     {:ok, new_game_info}
@@ -53,21 +50,38 @@ defmodule Game do
   end
 
   def handle_call(:who_to_move, _from, gInfo) do
-    {:reply, {gInfo.curPlayerId, gInfo.players |> Enum.at(gInfo.curPlayerId)}, gInfo}
-  end
-
-  def handle_call(:play, _from, gInfo) do
-    nplayers = length(gInfo.players)
-    cond do
-      nplayers != 4 -> {:reply, :num_players_incorrect, gInfo}
-      true -> {:reply, :ok, gInfo}
-    end
+    {:reply, {:ok, {gInfo.curPlayerId, gInfo.players |> Enum.at(gInfo.curPlayerId)}, []}, gInfo}
   end
 
   defp new_game_info() do
-    %GameInfo{id: -1,
+    jong = 0
+    {hands, coveredTiles} = dispatch_tiles(jong)
+    %GameInfo{
+              id: -1,
               wind: :East, 
-              coveredTiles: Tile.all |> Enum.shuffle}
+              jong: jong,
+              coveredTiles: coveredTiles,
+              hands: hands
+             }
 
+  end
+
+  defp dispatch_tiles(jong) do
+    game_tiles = Tile.all |> Enum.shuffle
+    times = 4
+    dispatch_tiles(jong, game_tiles, times, [])
+  end
+
+  defp dispatch_tiles(_jong, remain_tiles, 0, result) do
+    {result |> List.to_tuple, remain_tiles}
+  end
+
+  defp dispatch_tiles(jong, tiles, times, result) do
+    hand_tiles = cond do
+      ## flowers?
+      (times - 1) == jong -> tiles |> Enum.take(14)
+      true -> tiles |> Enum.take(13)
+    end
+    dispatch_tiles(jong, (tiles -- hand_tiles), (times - 1), [{hand_tiles, []} | result])
   end
 end
