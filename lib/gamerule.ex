@@ -40,7 +40,7 @@ defmodule GameRule do
   defp count_fan(win_patterns) do
     win_patterns
     |> Enum.map( fn {inner_win_pattern} -> do_count_fan(inner_win_pattern) end )
-    |> Enum.reduce( fn ({{fan, _fan_types}, win_pattern} = cur, {{acc_fan, _acc_fan_types}, acc_win_pattern} = acc) ->
+    |> Enum.reduce( fn ({{fan, _fan_types}, _win_pattern} = cur, {{acc_fan, _acc_fan_types}, _acc_win_pattern} = acc) ->
                           cond do
                             fan > acc_fan -> cur
                             true -> acc
