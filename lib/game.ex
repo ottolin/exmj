@@ -4,9 +4,11 @@ defmodule GameInfo do
             players: [], # for holding player names
             jong: 0, # 0 - 3
             curPlayerId: 0, # 0 - 3
+            curPlayerChoices: [],
             coveredTiles: [],
             openedTiles: [],
-            hands: :invalid # for holding different player tiles. { {[tiles], [fixed_tiles]} * 4 }
+            hands: :invalid, # for holding different player tiles. { {[tiles], [fixed_tiles]} * 4 }
+            lastPlayedTile: :invalid
 
 end
 
@@ -49,23 +51,42 @@ defmodule Game do
     {:reply, gInfo, gInfo}
   end
 
+  ## {:ok, {player id, player name}, [available moves]}
   def handle_call(:who_to_move, _from, gInfo) do
-    {:reply, {:ok, {gInfo.curPlayerId, gInfo.players |> Enum.at(gInfo.curPlayerId)}, []}, gInfo}
+    {:reply, {:ok, {gInfo.curPlayerId, gInfo.players |> Enum.at(gInfo.curPlayerId)}, gInfo.curPlayerChoices}, gInfo}
+  end
+
+  ## tiles: the hand tiles we want to check
+  ## extraTile: the one that is not in player's hand. Usually the last one discarded by previous player
+  defp possible_moves({hand_tiles, fixed_tiles}, extraTile) do
+  #TODO: other things
+    [:Draw]
+  end
+
+  ## no extra tile need to be checked, i.e. we have already have enough tiles on hand
+  defp possible_moves({hand_tiles, fixed_tiles}, :none) do
+  #TODO: other things
+    [:Discard]
   end
 
   defp new_game_info() do
     jong = 0
+    curPlayerId = 0
     {hands, coveredTiles} = dispatch_tiles(jong)
+    jongtiles = hands |> Enum.at(jong) # get the hand of jong player
     %GameInfo{
               id: -1,
               wind: :East, 
               jong: jong,
               coveredTiles: coveredTiles,
-              hands: hands
+              hands: hands,
+              curPlayerId: curPlayerId,
+              curPlayerChoices: possible_moves(jongtiles, :none)
              }
 
   end
 
+  ## { [{[hand_tiles], [fixed_tiles]} * 4], [remain covered tiles] }
   defp dispatch_tiles(jong) do
     game_tiles = Tile.all |> Enum.shuffle
     times = 4
