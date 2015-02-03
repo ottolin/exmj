@@ -1,7 +1,7 @@
 defmodule GameRule do
 
-  def win(tiles, fixed_tiles \\ []) do
-    wp = do_winpattern(tiles, fixed_tiles)
+  def win(hand_tiles, fixed_tiles \\ []) do
+    wp = do_winpattern(hand_tiles, fixed_tiles)
     case wp do
       nil -> :not_win
       [] -> :not_win
@@ -9,9 +9,14 @@ defmodule GameRule do
     end 
   end
 
-  def winpattern(tiles) do
-    do_winpattern(tiles, [])
+  def find_gong_pattern({hand_tiles, fixed_tiles}) do
+    
   end
+
+  # for testing only
+  #def winpattern(tiles) do
+  #  do_winpattern(tiles, [])
+  #end
 
   # 2 tiles left. finding a pair of eye
   defp do_winpattern(tiles, fixed_tiles) when length(tiles) == 2 do
@@ -69,52 +74,52 @@ defmodule GameRule do
     remain
     |> Enum.map( fn pattern -> 
                   cond do
-                    Tile.pung(pattern) -> :Pung
-                    Tile.sheung(pattern) -> :Sheung
-                    true -> :Wrong
+                    Tile.pung(pattern) -> :pung
+                    Tile.sheung(pattern) -> :sheung
+                    true -> :wrong
                     # todo: check flowers
                   end
                  end)
   end
 
-  # Returning a tuple of {number_of_fans, :Pung}
+  # Returning a tuple of {number_of_fans, :pung}
   defp pungpung_fan(mp) do
-    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && (pattern == :Pung) end)
+    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && (pattern == :pung) end)
     nfan = case all_pung do
       true -> 3
       _else -> 0
     end
-    {nfan, :Pung}
+    {nfan, :pung}
   end
 
-  # Returning a tuple of {number_of_fans, :PingWu}
+  # Returning a tuple of {number_of_fans, :pingwu}
   defp pingwu_fan(mp) do
-    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && (pattern == :Sheung) end)
+    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && (pattern == :sheung) end)
     nfan = case all_pung do
       true -> 1
       _else -> 0
     end
-    {nfan, :PingWu}
+    {nfan, :pingwu}
   end
 
-  # Returning a tuple of {number_of_fans, :SameCat | :MixCat}
+  # Returning a tuple of {number_of_fans, :samecat | :mixcat}
   defp category_fan(wp) do
     categories = wp |> List.flatten
-                    |> Enum.filter(fn tile -> tile.cat != :Flower end) # Skip flower when counting category fan
+                    |> Enum.filter(fn tile -> tile.cat != :flower end) # Skip flower when counting category fan
                     |> Enum.reduce([], fn (tile, acc) -> [tile.cat| acc] end)
                     |> Enum.uniq
 
     case length(categories) do
-      1 -> {7, :SameCat} # All categories are the same for full hand. 
+      1 -> {7, :samecat} # All categories are the same for full hand. 
       2 -> cond do
-            :Fan in categories -> {3, :MixCat} # Fan + another category
-            true -> {0, :MixCat} # Mixing of Bamboo/Character/Dot
+            :fan in categories -> {3, :mixcat} # Fan + another category
+            true -> {0, :mixcat} # Mixing of Bamboo/Character/Dot
            end
-      _Other -> {0, :MixCat}
+      _Other -> {0, :mixcat}
     end
   end
 
-  # Returning a tuple of {number_of_fans, :SameCat | :MixCat}
+  # Returning a tuple of {number_of_fans, :samecat | :mixcat}
   defp dragon_fan(wp) do
   end
 

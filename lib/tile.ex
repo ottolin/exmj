@@ -1,46 +1,10 @@
 defmodule Tile do
-  # category can be :Bamboo :Character :Dot :Fan :Flower
-  # sub-category can be :Bamboo :Character :Dot :Dragon :Wind :Flower
+  # category can be :bamboo :character :dot :fan :flower
+  # sub-category can be :bamboo :character :dot :dragon :wind :flower
   # num from 1 - 9 for Bamboo/Character/Dot
   # num from 1 - 7 for Fan (Dragon/Wind)
   # num from 1 - 8 for Flower
   defstruct cat: :invalid, sub: :invalid, num: 0
-
-  def pingwu do
-    [ %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 4},
-      %Tile{cat: :Dot, sub: :Dot, num: 5},
-      %Tile{cat: :Dot, sub: :Dot, num: 6},
-      %Tile{cat: :Bamboo, sub: :Bamboo, num: 1},
-      %Tile{cat: :Bamboo, sub: :Bamboo, num: 1}
-    ]
-  end
-
-  def gg() do
-    [ %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 1},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 2},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 3},
-      %Tile{cat: :Dot, sub: :Dot, num: 4},
-      %Tile{cat: :Dot, sub: :Dot, num: 5},
-      %Tile{cat: :Dot, sub: :Dot, num: 6},
-      %Tile{cat: :Dot, sub: :Dot, num: 7},
-      %Tile{cat: :Dot, sub: :Dot, num: 7}
-    ]
-  end
 
   def same(tiles) do
     [h|_T] = tiles
@@ -55,7 +19,7 @@ defmodule Tile do
   def sheung([_x, _y, _z] = inlist) do
     same_sub_3(inlist) && 
     consec_3(inlist) && 
-    Enum.reduce(inlist, true, fn (t, acc) -> acc && t.cat in [:Dot, :Bamboo, :Character] end)
+    Enum.reduce(inlist, true, fn (t, acc) -> acc && t.cat in [:dot, :bamboo, :character] end)
   end
 
   def find_3(tiles) do
@@ -97,15 +61,15 @@ defmodule Tile do
   end
 
   defp all_bamboos do
-    get_tiles(:Bamboo, :Bamboo, 9)
+    get_tiles(:bamboo, :bamboo, 9)
   end
 
   defp all_characters do
-    get_tiles(:Character, :Character, 9)
+    get_tiles(:character, :character, 9)
   end
 
   defp all_dots do
-    get_tiles(:Dot, :Dot, 9)
+    get_tiles(:dot, :dot, 9)
   end
 
   defp all_fans do
@@ -113,15 +77,15 @@ defmodule Tile do
   end
 
   defp all_winds do
-    get_tiles(:Fan, :Wind, 4)
+    get_tiles(:fan, :wind, 4)
   end
 
   defp all_dragons do
-    get_tiles(:Fan, :Dragon, 7, 5)
+    get_tiles(:fan, :dragon, 7, 5)
   end
 
   defp all_flowers do
-    get_tiles(:Flower, :Flower, 8)
+    get_tiles(:flower, :flower, 8)
   end
 
   defp get_tiles(cat, sub, to, from \\ 1) do

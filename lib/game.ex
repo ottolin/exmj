@@ -3,8 +3,8 @@ defmodule GameInfo do
             wind: :East,
             players: [], # for holding player names
             jong: 0, # 0 - 3
-            curPlayerId: 0, # 0 - 3
-            curPlayerChoices: [],
+            lastPlayerId: 0, # 0 - 3
+            possiblePlayerMoves: [],
             coveredTiles: [],
             openedTiles: [],
             hands: :invalid, # for holding different player tiles. { {[tiles], [fixed_tiles]} * 4 }
@@ -28,9 +28,9 @@ defmodule Game do
     GenServer.call(game, :info)
   end
 
-  def who_to_move(game) do
-    GenServer.call(game, :who_to_move)
-  end
+  #def who_to_move(game) do
+  #  GenServer.call(game, :who_to_move)
+  #end
 
   ## Server callbacks
   def init(_args) do
@@ -51,27 +51,51 @@ defmodule Game do
     {:reply, gInfo, gInfo}
   end
 
-  ## {:ok, {player id, player name}, [available moves]}
-  def handle_call(:who_to_move, _from, gInfo) do
-    {:reply, {:ok, {gInfo.curPlayerId, gInfo.players |> Enum.at(gInfo.curPlayerId)}, gInfo.curPlayerChoices}, gInfo}
-  end
+  ### {:ok, {player id, player name}, [available moves]}
+  #def handle_call(:who_to_move, _from, gInfo) do
+  #  #TODO: instead of hard code 0, just get the player id from curPlayerChoices
+  #  {:reply, {:ok, {0, gInfo.players |> Enum.at(0)}, gInfo.curPlayerChoices}, gInfo}
+  #end
 
-  ## tiles: the hand tiles we want to check
-  ## extraTile: the one that is not in player's hand. Usually the last one discarded by previous player
-  defp possible_moves({hand_tiles, fixed_tiles}, extraTile) do
-  #TODO: other things
-    [:Draw]
-  end
+  ### Doing nothing if the last played one is yourself
+  #defp possible_moves_for_signle_player(pid, last_pid, _, _) when pid == last_pid do
+  #  []
+  #end
 
-  ## no extra tile need to be checked, i.e. we have already have enough tiles on hand
-  defp possible_moves({hand_tiles, fixed_tiles}, :none) do
-  #TODO: other things
-    [:Discard]
+  ### no extra tile need to be checked, i.e. we should have already have enough tiles on hand to do possible actions
+  ### otherwise, no action can be performed
+  #defp possible_moves_for_signle_player(pid, last_pid, {hand_tiles, fixed_tiles}, :none) do
+  #  moves = cond do
+  #    rem(length(hand_tiles),3) == 2 ->
+  #        [:Discard] ++ case GameRule.win(hand_tiles) do
+  #                        :not_win -> []
+  #                        _ -> [:Win]
+  #                      end
+  #                   #++ #TODO: check gong
+  #    true -> []
+  #  end
+  #  moves
+  #end
+
+  ### tiles: the hand tiles we want to check
+  ### extraTile: the one that is not in player's hand. Usually the last one discarded by previous player
+  #defp possible_moves_for_signle_player(pid, last_pid, {hand_tiles, fixed_tiles}, extraTile) do
+  ##TODO: other things
+  #  [:Draw]
+  #end
+
+  #defp possible_moves(gInfo) do
+  #end
+
+  defp get_possible_moves(last_pid, last_tile) do
+    check_win ++
+    check_pung ++
+    check_gong ++
+    check_sheung
   end
 
   defp new_game_info() do
     jong = 0
-    curPlayerId = 0
     {hands, coveredTiles} = dispatch_tiles(jong)
     jongtiles = hands |> Enum.at(jong) # get the hand of jong player
     %GameInfo{
@@ -80,8 +104,7 @@ defmodule Game do
               jong: jong,
               coveredTiles: coveredTiles,
               hands: hands,
-              curPlayerId: curPlayerId,
-              curPlayerChoices: possible_moves(jongtiles, :none)
+              possiblePlayerMoves: {jong, possible_moves_for_signle_player(jong, -1, jongtiles, :none)} # only jong can move first during game start
              }
 
   end
