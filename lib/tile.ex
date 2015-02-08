@@ -6,6 +6,10 @@ defmodule Tile do
   # num from 1 - 8 for Flower
   defstruct cat: :invalid, sub: :invalid, num: 0
 
+  def same(t1, t2) do
+    (t1.sub == t2.sub) && (t1.num == t2.num)
+  end
+
   def same(tiles) do
     [h|_T] = tiles
     tiles

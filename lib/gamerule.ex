@@ -1,10 +1,11 @@
 defmodule GameRule do
 
-  def win(hand_tiles, fixed_tiles \\ []) do
+  def win?(hand_tiles, fixed_tiles \\ []) do
     wp = do_winpattern(hand_tiles, fixed_tiles)
     case wp do
       nil -> :not_win
       [] -> :not_win
+      :no_win_pattern -> :not_win
       _ -> {:win, count_fan(wp)}
     end 
   end
