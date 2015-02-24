@@ -16,14 +16,30 @@ defmodule Tile do
     |> Enum.reduce(true, fn(t,acc) -> acc && (t.sub == h.sub) && (t.num == h.num) end)
   end
 
+  def gong([w, x, y, z]) do
+    same([w, x, y, z])
+  end
+
+  def gong(_) do
+    false
+  end
+
   def pung([x, y, z]) do
     same([x, y, z])
+  end
+
+  def pung(_) do
+    false
   end
 
   def sheung([_x, _y, _z] = inlist) do
     same_sub_3(inlist) && 
     consec_3(inlist) && 
     Enum.reduce(inlist, true, fn (t, acc) -> acc && t.cat in [:dot, :bamboo, :character] end)
+  end
+
+  def sheung(_) do
+    false
   end
 
   def find_3(tiles) do

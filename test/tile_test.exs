@@ -74,6 +74,31 @@ defmodule TileTest do
     assert !Tile.pung(s)
   end
 
+  test "Not Pung 2" do
+    s = [ %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+    ]
+    assert !Tile.pung(s)
+  end
+
+  test "Gong" do
+    s = [ %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+    ]
+    assert Tile.gong(s)
+  end
+
+  test "Not Gong" do
+    s = [ %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+    ]
+    assert !Tile.gong(s)
+  end
   test "Sheung" do
     s = [ %Tile{cat: :dot, sub: :dot, num: 1},
       %Tile{cat: :dot, sub: :dot, num: 2},

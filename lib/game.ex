@@ -1,3 +1,4 @@
+require Logger
 defmodule GameInfo do
   defstruct id: -1,
             wind: :East,
@@ -6,62 +7,129 @@ defmodule GameInfo do
             lastPlayerId: 3, # 0 - 3
             possiblePlayerMoves: [],
             coveredTiles: [],
-            openedTiles: [],
+            groundTiles: [],
             hands: :invalid, # for holding different player tiles. { {[tiles], [fixed_tiles]} * 4 }
-            lastPlayedTile: :invalid
+            lastPlayedTile: :invalid,
+            actions: [] # a queue for holding all user actions, can used for checking gong + win
 
 end
 
 defmodule Game do
-  use GenServer
 
-  ## Client API
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], [])
+  def new() do
+    jong = 0
+    {hands, coveredTiles} = dispatch_tiles(jong)
+    gInfo = %GameInfo{
+              id: -1,
+              wind: :East, 
+              jong: jong,
+              coveredTiles: coveredTiles,
+              hands: hands,
+             }
+
+    %{gInfo | possiblePlayerMoves: get_possible_moves(gInfo)}
   end
 
-  def join(game, player) do
-    GenServer.call(game, {:join, player})
+  def next(gInfo) do
+    #TODO: gen next game
+    new
   end
 
-  def info(game) do
-    GenServer.call(game, :info)
-  end
-
-  def moves(game) do
-    GenServer.call(game, :moves)
-  end
-
-  def player_action(game, {:act, pid, action}) do
-  end
-
-  ## Server callbacks
-  def init(_args) do
-    {:ok, new_game_info}
-  end
-
-  def handle_call({:join, player}, _from, gInfo) do
-    cond do
-      length(gInfo.players) < 4 ->
-        newInfo = %{gInfo | players: [player | gInfo.players]}
-        {:reply, {:ok, length(newInfo.players) - 1}, newInfo} # returning {:ok, pid} to client
-      true ->
-        {:reply, :err_game_full, gInfo}
+  def action(gInfo, action_list) do
+    ## find the highest priority action
+    next_move = select_next_move(gInfo, action_list)
+    gInfo1 = gInfo
+    case next_move do
+      nil -> Logger.error "Invalid moves called:"
+             action_list |> Enum.each( fn {pid, action, _pattern} -> Logger.error "Invalid move from player: " <> to_string(pid) <> " performing: " <> to_string(action) end)
+      {pid, action, pattern} -> Logger.info "Player " <> to_string(pid) <> " performed: " <> to_string(action)
+                                gInfo1 = apply_next_move(gInfo, {pid, action, pattern})
+                                gInfo1 = %{gInfo1| actions: [next_move | gInfo1.actions]}
     end
+    gInfo1
   end
 
-  def handle_call(:info, _from, gInfo) do
-    {:reply, gInfo, gInfo}
+  ## the order of return list is indicating priority of moves
+  def get_possible_moves(gInfo) do
+    po = play_order(gInfo.lastPlayerId)
+    win = po |> Enum.flat_map(fn pid -> check_win(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
+    pung = po |> Enum.flat_map(fn pid -> check_pung(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
+    gong = po |> Enum.flat_map(fn pid -> check_gong(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
+    sheung = check_sheung(hd(po), hand_of(hd(po), gInfo), gInfo.lastPlayedTile)
+
+    rv = win ++ pung ++ gong ++ sheung
+    curp = hd(po)
+    {current_player_hand_tiles, _fixed_tiles} = hand_of(curp, gInfo)
+    rv = rv ++ cond do
+      # need discard, having 3n+2 pieces
+      rem(length(current_player_hand_tiles), 3) == 2 ->
+        current_player_hand_tiles |> Enum.map(&({curp, :discard, &1}))
+      true -> [{hd(po), :draw, []}]
+    end
+    rv
   end
 
-  def handle_call(:moves, _from, gInfo) do
-    {:reply, gInfo.possiblePlayerMoves, gInfo}
+  defp apply_next_move(gInfo, {pid, :discard, tile}) do
+    {hand_tiles, fixed_tiles} = hand_of(pid, gInfo)
+    newhand = {hand_tiles -- [tile], fixed_tiles}
+    IO.inspect newhand
+    tmp = %{gInfo| lastPlayedTile: tile,
+             lastPlayerId: pid,
+             groundTiles: [tile | gInfo.groundTiles],
+             hands: put_elem(gInfo.hands, pid, newhand)
+    }
+    %{tmp| possiblePlayerMoves: get_possible_moves(tmp)}
   end
 
-  def handle_call({:act, pid, action}, _from, gInfo) do
+  defp apply_next_move(gInfo, {pid, :draw, _pattern}) do
+    {hand_tiles, fixed_tiles} = hand_of(pid, gInfo)
+    [drawed_tile| remain] = gInfo.coveredTiles
+    newhand = {[drawed_tile | hand_tiles], fixed_tiles}
+    tmp = %{gInfo| lastPlayedTile: :invalid,
+             coveredTiles: remain,
+             hands: put_elem(gInfo.hands, pid, newhand)
+    }
+    %{tmp| possiblePlayerMoves: get_possible_moves(tmp)}
   end
 
-  ## Helper functions
+  defp apply_next_move(gInfo, {_pid, :pung, _pattern} = act) do
+    apply_pung_or_sheung(gInfo, act)
+  end
+
+  defp apply_next_move(gInfo, {_pid, :sheung, _pattern} = act) do
+    apply_pung_or_sheung(gInfo, act)
+  end
+
+  defp apply_next_move(gInfo, {pid, :gong, pattern}) do
+    {hand_tiles, fixed_tiles} = hand_of(pid, gInfo)
+    tile = hd(pattern)
+    newhand_tiles = hand_tiles |> Enum.filter(&(!Tile.same(&1, tile))) # All the target gong tiles on hand will be removed
+    newfixed_tiles = fixed_tiles |> Enum.filter( fn fix_pattern -> !(tile in fix_pattern) end) # All the target gong tiles on fixed will be removed (self draw 1 more same tile to gong)
+    newhand = {newhand_tiles, [pattern | newfixed_tiles]}
+
+    tmp = %{gInfo| lastPlayedTile: :invalid,
+                   hands: put_elem(gInfo.hands, pid, newhand)
+    }
+    %{tmp| possiblePlayerMoves: get_possible_moves(tmp)}
+  end
+
+  defp apply_pung_or_sheung(gInfo, {pid, _act, pattern}) do
+    {hand_tiles, fixed_tiles} = hand_of(pid, gInfo)
+    newhand_tiles = [gInfo.lastPlayedTile | hand_tiles] -- pattern
+    newhand = {newhand_tiles, [pattern | fixed_tiles]}
+
+    ## we will not call get_possible_moves here
+    ## since gong/win is NOT allowed after sheung/pung
+    ## the only thing can be done after sheung/pung is discard
+    %{gInfo| lastPlayedTile: :invalid,
+             hands: put_elem(gInfo.hands, pid, newhand),
+             possiblePlayerMoves: newhand_tiles |>Enum.map(&({pid, :discard, &1}))
+    }
+  end
+
+  defp select_next_move(gInfo, action_list) do
+    gInfo.possiblePlayerMoves |> Enum.find( fn pm -> pm in action_list end )
+  end
 
   defp check_sheung(_pid, _hand, :invalid) do
     []
@@ -148,44 +216,16 @@ defmodule Game do
     end
   end
 
-  defp do_check_win(pid, {hand_tiles, fixed_tiles}, :invalid) do
+  defp do_check_win(_pid, {hand_tiles, fixed_tiles}, :invalid) do
     GameRule.win?(hand_tiles, fixed_tiles)
   end
 
-  defp do_check_win(pid, {hand_tiles, fixed_tiles}, last_played_tile) do
+  defp do_check_win(_pid, {hand_tiles, fixed_tiles}, last_played_tile) do
     GameRule.win?([last_played_tile | hand_tiles], fixed_tiles)
   end
 
-  defp wu do
-    [ %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      #%Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 4},
-      %Tile{cat: :dot, sub: :dot, num: 5},
-      %Tile{cat: :dot, sub: :dot, num: 6},
-      %Tile{cat: :bamboo, sub: :bamboo, num: 1},
-      %Tile{cat: :bamboo, sub: :bamboo, num: 1}
-    ]
-  end
-
-  defp get_possible_moves(gInfo) do
-    po = play_order(gInfo.lastPlayerId)
-    win = po |> Enum.flat_map(fn pid -> check_win(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
-    pung = po |> Enum.flat_map(fn pid -> check_pung(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
-    gong = po |> Enum.flat_map(fn pid -> check_gong(pid, hand_of(pid, gInfo), gInfo.lastPlayedTile) end )
-    sheung = check_sheung(hd(po), hand_of(hd(po), gInfo), gInfo.lastPlayedTile)
-
-    win ++ pung ++ gong ++ sheung ++ [{hd(po), :draw, []}]
-  end
-
   defp play_order(last_player_id) do
-    last_player_id + 1 .. last_player_id + 4
+    last_player_id + 1 .. last_player_id + 3
     |> Enum.map(&(rem(&1, 4)))
   end
 
@@ -193,25 +233,10 @@ defmodule Game do
     elem(gInfo.hands, pid)
   end
 
-  defp new_game_info() do
-    jong = 0
-    {hands, coveredTiles} = dispatch_tiles(jong)
-    gInfo = %GameInfo{
-              id: -1,
-              wind: :East, 
-              jong: jong,
-              coveredTiles: coveredTiles,
-              #hands: Tuple.delete_at(Tuple.insert_at(hands, 0, {wu, []}), 1),
-              hands: hands,
-              #lastPlayedTile: %Tile{cat: :dot, sub: :dot, num: 3},
-             }
-
-    %{gInfo | possiblePlayerMoves: get_possible_moves(gInfo)}
-  end
-
   ## { [{[hand_tiles], [fixed_tiles]} * 4], [remain covered tiles] }
   defp dispatch_tiles(jong) do
     game_tiles = Tile.all |> Enum.shuffle
+    #game_tiles = Tile.all
     times = 4
     dispatch_tiles(jong, game_tiles, times, [])
   end

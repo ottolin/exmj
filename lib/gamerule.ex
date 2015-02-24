@@ -10,15 +10,6 @@ defmodule GameRule do
     end 
   end
 
-  def find_gong_pattern({hand_tiles, fixed_tiles}) do
-    
-  end
-
-  # for testing only
-  #def winpattern(tiles) do
-  #  do_winpattern(tiles, [])
-  #end
-
   # 2 tiles left. finding a pair of eye
   defp do_winpattern(tiles, fixed_tiles) when length(tiles) == 2 do
     case Tile.same(tiles) do
@@ -77,15 +68,16 @@ defmodule GameRule do
                   cond do
                     Tile.pung(pattern) -> :pung
                     Tile.sheung(pattern) -> :sheung
+                    Tile.gong(pattern) -> :gong
                     true -> :wrong
-                    # todo: check flowers
+                    # TODO: check flowers
                   end
                  end)
   end
 
   # Returning a tuple of {number_of_fans, :pung}
   defp pungpung_fan(mp) do
-    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && (pattern == :pung) end)
+    all_pung = mp |> Enum.reduce(true, fn (pattern, acc) -> acc && ((pattern == :pung) || (pattern == :gong)) end)
     nfan = case all_pung do
       true -> 3
       _else -> 0
