@@ -1,40 +1,6 @@
-defmodule GameRule do
+defmodule WinRule do
 
-  def win?(hand_tiles, fixed_tiles \\ []) do
-    wp = do_winpattern(hand_tiles, fixed_tiles)
-    case wp do
-      nil -> :not_win
-      [] -> :not_win
-      :no_win_pattern -> :not_win
-      _ -> {:win, count_fan(wp)}
-    end 
-  end
-
-  # 2 tiles left. finding a pair of eye
-  defp do_winpattern(tiles, fixed_tiles) when length(tiles) == 2 do
-    case Tile.same(tiles) do
-      true -> {[tiles | fixed_tiles]} # putting each win pattern list into a tuple to prevent flattening
-      _else -> :no_win_pattern
-    end
-  end
-
-  # more than 2 tiles left.
-  defp do_winpattern(tiles, fixed_tiles) when rem(length(tiles),3) == 2 do
-    case Tile.find_3(tiles) do
-      [] -> :no_win_pattern
-      fixed_list -> Enum.map(fixed_list, fn fixed -> 
-                                           do_winpattern(tiles -- fixed, [fixed | fixed_tiles])
-                                         end)
-                    |> List.flatten
-                    |> Enum.filter( fn result -> result != :no_win_pattern end )
-    end
-  end
-
-  defp do_winpattern(_, _) do
-    nil
-  end
-
-  defp count_fan(win_patterns) do
+  def count_fan(win_patterns) do
     win_patterns
     |> Enum.map( fn {inner_win_pattern} -> do_count_fan(inner_win_pattern) end )
     |> Enum.reduce( fn ({{fan, _fan_types}, _win_pattern} = cur, {{acc_fan, _acc_fan_types}, _acc_win_pattern} = acc) ->
@@ -60,7 +26,8 @@ defmodule GameRule do
 
   # map the win pattern from winpattern() call to another pattern for easier counting fan
   defp map_pattern(win_pattern) do
-    [_eye| remain] = win_pattern
+    #[_eye| remain] = win_pattern
+    remain = win_pattern |> Enum.filter( fn x -> length(x) > 2 end )
     # We dont care the pair of eye.
     # eye is always at position 0 due to the recursion checking
     remain

@@ -2,42 +2,6 @@ defmodule TileTest do
   use ExUnit.Case
   doctest Tile
 
-  def pingwu do
-    [ %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 4},
-      %Tile{cat: :dot, sub: :dot, num: 5},
-      %Tile{cat: :dot, sub: :dot, num: 6},
-      %Tile{cat: :bamboo, sub: :bamboo, num: 1},
-      %Tile{cat: :bamboo, sub: :bamboo, num: 1}
-    ]
-  end
-
-  def gg() do
-    [ %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 1},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 2},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 3},
-      %Tile{cat: :dot, sub: :dot, num: 4},
-      %Tile{cat: :dot, sub: :dot, num: 5},
-      %Tile{cat: :dot, sub: :dot, num: 6},
-      %Tile{cat: :dot, sub: :dot, num: 7},
-      %Tile{cat: :dot, sub: :dot, num: 7}
-    ]
-  end
-
   test "Same tiles" do
     s = [ %Tile{cat: :dot, sub: :dot, num: 1},
       %Tile{cat: :dot, sub: :dot, num: 1},

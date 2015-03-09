@@ -212,16 +212,52 @@ defmodule Game do
     rv = do_check_win(pid, hand, last_played_tile)
     case rv do
       :not_win -> []
-      {:win, fans} -> [{pid, :win, fans}]
+      {:win, win_pattern} -> Enum.map(win_pattern, fn x -> {pid, :win, x} end)
     end
   end
 
   defp do_check_win(_pid, {hand_tiles, fixed_tiles}, :invalid) do
-    GameRule.win?(hand_tiles, fixed_tiles)
+    win?(hand_tiles, fixed_tiles)
   end
 
   defp do_check_win(_pid, {hand_tiles, fixed_tiles}, last_played_tile) do
-    GameRule.win?([last_played_tile | hand_tiles], fixed_tiles)
+    win?([last_played_tile | hand_tiles], fixed_tiles)
+  end
+
+  ## Actual win checking code
+  defp win?(hand_tiles, fixed_tiles \\ []) do
+    wp = do_winpattern(hand_tiles, fixed_tiles)
+    case wp do
+      nil -> :not_win
+      [] -> :not_win
+      :no_win_pattern -> :not_win
+      _ -> {:win, wp}
+    end 
+  end
+
+  # 2 tiles left. finding a pair of eye
+  defp do_winpattern(tiles, fixed_tiles) when length(tiles) == 2 do
+    case Tile.same(tiles) do
+      true -> {Enum.sort([tiles | fixed_tiles])} # putting each win pattern list into a tuple to prevent flattening
+      _else -> :no_win_pattern
+    end
+  end
+
+  # more than 2 tiles left.
+  defp do_winpattern(tiles, fixed_tiles) when rem(length(tiles),3) == 2 do
+    case Tile.find_3(tiles) do
+      [] -> :no_win_pattern
+      fixed_list -> Enum.map(fixed_list, fn fixed -> 
+                                           do_winpattern(tiles -- fixed, [fixed | fixed_tiles])
+                                         end)
+                    |> List.flatten
+                    |> Enum.uniq
+                    |> Enum.filter( fn result -> result != :no_win_pattern end )
+    end
+  end
+
+  defp do_winpattern(_, _) do
+    nil
   end
 
   defp play_order(last_player_id) do
