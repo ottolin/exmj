@@ -56,6 +56,26 @@ defmodule GameTest do
     ]
   end
 
+  def test_hand1() do
+    {
+    [ %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 1},
+      %Tile{cat: :dot, sub: :dot, num: 2},
+      %Tile{cat: :dot, sub: :dot, num: 2},
+      %Tile{cat: :dot, sub: :dot, num: 2},
+      %Tile{cat: :dot, sub: :dot, num: 3},
+      %Tile{cat: :dot, sub: :dot, num: 3},
+      %Tile{cat: :dot, sub: :dot, num: 3},
+      %Tile{cat: :dot, sub: :dot, num: 4},
+      %Tile{cat: :dot, sub: :dot, num: 4},
+      %Tile{cat: :dot, sub: :dot, num: 4},
+      %Tile{cat: :dot, sub: :dot, num: 7},
+    ],
+    []
+    }
+  end
+
   test "PingWu win test" do
     gInfo = Game.new
     gInfo = %{gInfo | hands: put_elem(gInfo.hands, 0, {pingwu, []})}
@@ -96,5 +116,44 @@ defmodule GameTest do
                                             end)
 
     assert ([{{7, [{7, :samecat}]}, _}, {{7, [{7, :samecat}]}, _}, {{10, [{3, :pung},{7, :samecat}]}, _}] = fanlist)
+  end
+
+  test "Dark gong test" do
+    gInfo = Game.new
+    gInfo = %{gInfo | hands: put_elem(gInfo.hands, 0, test_hand1)}
+    gInfo = %{gInfo | lastPlayerId: 3}
+    gInfo = %{gInfo | lastPlayedTile: %Tile{cat: :dot, sub: :dot, num: 4}}
+    gInfo = %{gInfo | possiblePlayerMoves: Game.get_possible_moves(gInfo)}
+
+    assert (gInfo.possiblePlayerMoves ==
+        [{0, :pung, [%Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]},
+        {0, :gong, [%Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]},
+        {0, :sheung, [%Tile{cat: :dot, num: 2, sub: :dot}, %Tile{cat: :dot, num: 3, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]},
+        {0, :draw, []}]
+    )
+
+    # First we simulate a pung
+    gInfo = Game.action(gInfo, [{0, :pung, [%Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]}])
+
+    # Then, just pretend a round has been passed...
+    gInfo = %{gInfo | lastPlayerId: 3}
+    gInfo = %{gInfo | lastPlayedTile: :invalid}
+    gInfo = %{gInfo | possiblePlayerMoves: Game.get_possible_moves(gInfo)}
+
+    # Make sure it has the 1 dark gong right here
+    assert (gInfo.possiblePlayerMoves ==
+        [{0, :gong, [%Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]},
+        {0, :discard, %Tile{cat: :dot, num: 1, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 1, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 1, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 2, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 2, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 2, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 3, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 3, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 3, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 4, sub: :dot}},
+        {0, :discard, %Tile{cat: :dot, num: 7, sub: :dot}}]
+    )
   end
 end

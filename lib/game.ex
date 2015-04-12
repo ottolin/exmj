@@ -168,7 +168,7 @@ defmodule Game do
     one_dark_gong = fixed_tiles
     |> Enum.reduce([], fn pattern, acc -> 
                           cond do
-                            Tile.pung(pattern) && (hd(pattern) in hand_tiles) -> [{pid, :gong, hd(pattern)} | acc]
+                            Tile.pung(pattern) && (hd(pattern) in hand_tiles) -> [{pid, :gong, (for _ <- 1..4, do: hd(pattern))} | acc]
                             true -> acc
                           end
                         end )
