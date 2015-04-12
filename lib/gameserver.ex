@@ -53,11 +53,11 @@ defmodule GameServer do
     {:reply, gInfo.possiblePlayerMoves, gInfo}
   end
 
-  ## action_list should be a list of tuple {:pung|:sheung|:gong|:win|:draw, pattern} **same tuple as the one return by :moves call
   def handle_call({:act, {pid, action, pattern}}, from, gInfo) do
     handle_call({:act, [{pid, action, pattern}]}, from, gInfo)
   end
 
+  ## action_list should be a list of tuple {player_id, :pung|:sheung|:gong|:win|:draw, pattern} **same tuple as the one return by :moves call
   def handle_call({:act, action_list}, _from, gInfo) do
     ## update the possible action to be the selected player to discard a tile
     gInfo1 = Game.action(gInfo, action_list)
