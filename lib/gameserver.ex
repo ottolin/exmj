@@ -53,6 +53,7 @@ defmodule GameServer do
     {:reply, gInfo.possiblePlayerMoves, gInfo}
   end
 
+  ## short cut for passing only a single action ** Mainly for testing **
   def handle_call({:act, {pid, action, pattern}}, from, gInfo) do
     handle_call({:act, [{pid, action, pattern}]}, from, gInfo)
   end
