@@ -118,7 +118,7 @@ defmodule GameTest do
     assert ([{{7, [{7, :samecat}]}, _}, {{7, [{7, :samecat}]}, _}, {{10, [{3, :pung},{7, :samecat}]}, _}] = fanlist)
   end
 
-  test "Dark gong test" do
+  test "Pung -> 1 Dark gong -> Win test" do
     gInfo = Game.new
     gInfo = %{gInfo | hands: put_elem(gInfo.hands, 0, test_hand1)}
     gInfo = %{gInfo | lastPlayerId: 3}
@@ -155,5 +155,26 @@ defmodule GameTest do
         {0, :discard, %Tile{cat: :dot, num: 4, sub: :dot}},
         {0, :discard, %Tile{cat: :dot, num: 7, sub: :dot}}]
     )
+
+    # Simulate 1 dark gong
+    gInfo = Game.action(gInfo, [{0, :gong, [%Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}, %Tile{cat: :dot, num: 4, sub: :dot}]}])
+
+    # Only can draw after gong
+    assert (gInfo.possiblePlayerMoves ==
+      [{0, :draw, []}]
+    )
+
+    # Ok, simulate a draw, but let's make it a gong+win by putting a 'dot7' on the queue top!
+    gInfo = %{gInfo | coveredTiles: [%Tile{cat: :dot, num: 7, sub: :dot} | gInfo.coveredTiles]}
+    gInfo = Game.action(gInfo, [{0, :draw, []}])
+
+    fanlist = Enum.reduce(gInfo.possiblePlayerMoves, [], fn ({_pid, move, pattern}, acc) -> 
+                                            case move do
+                                              :win -> [WinRule.count_fan([pattern]) | acc]
+                                              :discard -> acc
+                                            end
+                                            end)
+
+    assert( :GongWin_Add_1_fan == :Todo )
   end
 end
